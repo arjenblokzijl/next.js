@@ -349,7 +349,8 @@ export function navigateToKnownRoute(
         accumulation,
         routeCacheEntry,
         navigateType,
-        navigationLock
+        navigationLock,
+        transitionId
       )
     }
     return completeSoftNavigation(

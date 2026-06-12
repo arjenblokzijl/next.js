@@ -16,6 +16,7 @@ import { fetchServerResponse } from '../router-reducer/fetch-server-response'
 import {
   startPPRNavigation,
   spawnDynamicRequests,
+  trackPrefetchedResponseEnds,
   FreshnessPolicy,
   getCurrentNavigationLock,
   type NavigationLock,
@@ -49,6 +50,7 @@ import { UnknownDynamicStaleTime, computeDynamicStaleAt } from './bfcache'
 import { createLinkPrefetchPartialError } from '../../../shared/lib/instant-messages'
 import {
   abortRouterTransition,
+  beginRouterTransitionRequest,
   setRouterTransitionPrefetch,
 } from '../router-transition'
 
@@ -299,6 +301,7 @@ export function navigateToKnownRoute(
   }
   const accumulation: NavigationRequestAccumulation = {
     separateRefreshUrls: null,
+    prefetchedResponseEnds: null,
     scrollRef: null,
   }
   // We special case navigations to the exact same URL as the current location.
@@ -336,6 +339,7 @@ export function navigateToKnownRoute(
     accumulation
   )
   if (task !== null) {
+    trackPrefetchedResponseEnds(accumulation, transitionId)
     setRouterTransitionPrefetch(
       transitionId,
       task.dynamicRequestTree === null ? 'hit-route' : 'hit-shell'
@@ -478,9 +482,11 @@ async function navigateToUnknownRoute(
   }
 
   setRouterTransitionPrefetch(transitionId, 'miss')
+  const finishRequest = beginRouterTransitionRequest(transitionId)
   const promiseForDynamicServerResponse = fetchServerResponse(url, {
     flightRouterState: dynamicRequestTree,
     nextUrl,
+    onResponseEnd: finishRequest,
   })
   const result = await promiseForDynamicServerResponse
   if (typeof result === 'string') {

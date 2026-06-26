@@ -80,6 +80,12 @@ export type StaticStageData<
 type SpaFetchServerResponseResult = {
   flightData: NormalizedFlightData[]
   canonicalUrl: URL
+  /**
+   * Whether the request was redirected (by the browser or by our manual
+   * redirect replay). When true, `canonicalUrl` is the redirect destination
+   * rather than the requested URL.
+   */
+  redirected: boolean
   renderedSearch: NormalizedSearch
   couldBeIntercepted: boolean
   supportsPerSegmentPrefetching: boolean
@@ -290,6 +296,7 @@ export async function fetchServerResponse(
     return {
       flightData: normalizedFlightData,
       canonicalUrl: canonicalUrl,
+      redirected: res.redirected,
       // TODO: We should be able to read this from the rewrite header, not the
       // Flight response. Theoretically they should always agree, but there are
       // currently some cases where it's incorrect for interception routes. We
